@@ -1,0 +1,3 @@
+# This file is used internally by FFMPEG.
+file 'file:C:/Users/Bulaya/PycharmProjects/DynamicClusteringAlgorithms/media/videos/animation_main/480p15/partial_movie_files/SineWave/1185818338_83607298_3792218529.mp4'
+file 'file:C:/Users/Bulaya/PycharmProjects/DynamicClusteringAlgorithms/media/videos/animation_main/480p15/partial_movie_files/SineWave/624642324_1733944848_945750497.mp4'
