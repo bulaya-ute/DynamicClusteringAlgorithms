@@ -2,6 +2,8 @@ from manim import *
 import random
 import math
 
+import numpy as np
+
 
 class KMeans(Scene):
     def construct(self):
@@ -56,11 +58,12 @@ class KMeans(Scene):
         self.wait(2)
 
         centroids_moved = True
-        while centroids_moved:
+        # while centroids_moved:
+        for _ in range(3):
             centroids_moved = False
 
-            # A cluster will be a group of dots in this case. The first item in the group will be the centroid
-            # dot
+            # A cluster will be a group of dots in this case. The first item in the group
+            # will be the centroid dot
             clusters = [VGroup(centroid) for centroid in centroids]
             assigned_lines = VGroup()
 
@@ -90,13 +93,49 @@ class KMeans(Scene):
 
                 # Add dot to the cluster
                 for cluster in clusters:
-                    if cluster[0] is
+                    if cluster[0] is centroids[shortest_index]:
+                        cluster.add(sample)
 
                 # Animate the removal of other lines
                 self.play(FadeOut(lines))
                 self.wait(0.5)
 
-            # Add the recognised cluster
+            # Calculate the variances of the clusters and check if the existing centroid changes position
+            cluster_means = [(np.mean([sample.get_x() for sample in cluster[1:]]),
+                              np.mean([sample.get_y() for sample in cluster[1:]])) for cluster in clusters]
+
+            # Check if cluster centroids are already located at the cluster means
+            for i, (cluster, mean_pos) in enumerate(zip(clusters, cluster_means)):
+                print(f"DEBUG 0: MEAN POS - {mean_pos}, CENTROID POS - {cluster[0].get_center()[0:2]}")
+                centroid_pos = np.round(tuple(cluster[0].get_center()[0:2]), decimals=1)
+                mean_pos = np.round(mean_pos, decimals=1)
+
+                if (centroid_pos != mean_pos).any():
+                    print(f"\tDEBUG 1: MEAN POS - {mean_pos}, CENTROID POS - {centroid_pos}")
+                    centroids_moved = True
+
+                    # # Show a dot at the mean
+                    # x_mark = Text("X", font_size=48, color=RED)
+                    #
+                    # # Position the 'X'
+                    # x_mark.move_to((mean_pos[0], mean_pos[1], 0))
+                    #
+                    # # Add 'X' to the scene
+                    # # self.add(x_mark)
+                    # self.play(FadeIn(x_mark))
+
+                    # Relocate the centroid
+                    self.play(centroids[i].animate.move_to((mean_pos[0], mean_pos[1], 0)), run_time=0.5)
+
+            if centroids_moved:
+                # Remove the existing lines
+                self.play(FadeOut(*[line for line in assigned_lines]), run_time=1)
+
+                # Make all the sample dots white again
+                self.play(*[dot.animate.set_color(WHITE) for dot in samples], run_time=0.5)
+
+            # break
 
         # # Fade out all elements
         # self.play(FadeOut(rectangle), FadeOut(samples), FadeOut(centroids))
+        self.wait(5)
