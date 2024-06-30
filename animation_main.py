@@ -3,7 +3,6 @@ import subprocess
 from manim import *
 import random
 import math
-
 import numpy as np
 
 sample_points = [(2.4658305992895144, 1.6172972798007168), (2.7596883152421237, 1.3832868707980224),
@@ -15,11 +14,11 @@ sample_points = [(2.4658305992895144, 1.6172972798007168), (2.7596883152421237, 
 
 centroid_points = [(-1.4071639815436434, -2.7868225797427524), (-1.2579876499736493, 0.3097631351116471),
                    (0.6507108202087171, 2.5291621624495493)]
+colors = [BLUE, GREEN, RED, PURPLE, ORANGE, YELLOW, GREY]
 
 
 class KMeans(Scene):
     def construct(self):
-        colors = [BLUE, GREEN, RED, PURPLE, ORANGE, YELLOW, GREY]
 
         # Generate samples and centroids within the rectangle
         samples = VGroup()
@@ -65,111 +64,54 @@ class KMeans(Scene):
             clusters = [VGroup(centroid) for centroid in centroids]
             assigned_lines = VGroup()
 
-            if interation_num < 0:
-                # Begin assigning samples to centroids
-                for sample in samples:
-                    distances = []
+            connect_lines_animations = []
+            change_line_color_animations = []
+            fade_out_lines_animations = []
+            for sample in samples:
+                distances = []
 
-                    # Variable to store the lines
-                    lines = VGroup()
-                    for centroid in centroids:
-                        line = Line(start=sample.get_center(), end=centroid.get_center())
-                        lines.add(line)
-                        distances.append(math.sqrt(
-                            (centroid.get_center()[0] - sample.get_center()[0]) ** 2 +
-                            (centroid.get_center()[1] - sample.get_center()[1]) ** 2))
+                # Variable to store the lines
+                lines = VGroup()
+                for centroid in centroids:
+                    line = Line(start=sample.get_center(), end=centroid.get_center())
+                    lines.add(line)
+                    distances.append(math.sqrt(
+                        (centroid.get_center()[0] - sample.get_center()[0]) ** 2 +
+                        (centroid.get_center()[1] - sample.get_center()[1]) ** 2))
 
-                    # Show lines connecting the sample to the centroids
-                    self.play(*[Create(line) for line in lines], run_time=0.5)
-                    self.wait(0.5)
-
-                    # Change the color of the shortest line and its sample to suit its associated centroid
-                    shortest_index = distances.index(min(distances))
-                    self.play(lines[shortest_index].animate.set_color(centroids[shortest_index].get_color()),
-                              sample.animate.set_color(centroids[shortest_index].get_color()), run_time=0.5)
-                    assigned_lines.add(lines[shortest_index])
-                    lines.remove(lines[shortest_index])
-
-                    # Add dot to the cluster
-                    for cluster in clusters:
-                        if cluster[0] is centroids[shortest_index]:
-                            cluster.add(sample)
-
-                    # Animate the removal of other lines
-                    self.play(FadeOut(lines))
-                    self.wait(0.5)
-            else:
-                connect_lines_animations = []
-                change_line_color_animations = []
-                fade_out_lines_animations = []
-                for sample in samples:
-                    distances = []
-
-                    # Variable to store the lines
-                    lines = VGroup()
-                    for centroid in centroids:
-                        line = Line(start=sample.get_center(), end=centroid.get_center())
-                        lines.add(line)
-                        distances.append(math.sqrt(
-                            (centroid.get_center()[0] - sample.get_center()[0]) ** 2 +
-                            (centroid.get_center()[1] - sample.get_center()[1]) ** 2))
-
-                    # Show lines connecting the sample to the centroids
-                    connect_lines_animations += [Create(line) for line in lines]
-                    # self.play(*[Create(line) for line in lines], run_time=0.5)
-                    # self.wait(0.5)
-
-                    # Change the color of the shortest line and its sample to suit its associated centroid
-                    shortest_index = distances.index(min(distances))
-                    # self.play(lines[shortest_index].animate.set_color(centroids[shortest_index].get_color()),
-                    #           sample.animate.set_color(centroids[shortest_index].get_color()), run_time=0.5)
-                    change_line_color_animations += [
-                        lines[shortest_index].animate.set_color(centroids[shortest_index].get_color()),
-                        sample.animate.set_color(centroids[shortest_index].get_color())
-                    ]
-                    assigned_lines.add(lines[shortest_index])
-                    lines.remove(lines[shortest_index])
-
-                    # Add dot to the cluster
-                    for cluster in clusters:
-                        if cluster[0] is centroids[shortest_index]:
-                            cluster.add(sample)
-
-                    # Animate the removal of other lines
-                    # self.play(FadeOut(lines))
-                    fade_out_lines_animations.append(FadeOut(lines))
-                    # self.wait(0.5)
-
-                # if interation_num < 0:
-                #     print(f"DEBUG: connect animations: {len(connect_lines_animations)}")
-                #     print(f"DEBUG: fade-line animations: {len(fade_out_lines_animations)}")
-                #     print(f"DEBUG: change color animations: {len(change_line_color_animations)}")
-                #     for i in range(0, len(connect_lines_animations), 3):
-                #         self.play(*connect_lines_animations[i: i + 3], run_time=1)
-                #         # l1 = int(i / 1.5)
-                #         # l2 = l1 + 2
-                #         # self.play(*fade_out_lines_animations[l1:l2], run_time=1)
-                #         # c1 = int(i / 3)
-                #         # c2 = c1 + 1
-                #         # self.play(*change_line_color_animations[c1:c2], run_time=1.0)
-                #
-                #     # # self.play(*connect_lines_animations, run_time=1.0)
-                #     # # [self.play(anim, run_time=0.5) for anim in connect_lines_animations]
-                #     # [self.play(*connect_lines_animations[i: i + 3], run_time=0.5) for i in
-                #     #  range(0, len(connect_lines_animations), 3)]
-                #     # self.wait(0.5)
-                #     [self.play(anim, run_time=0.5) for anim in fade_out_lines_animations]
-                #     # self.wait(0.5)
-                #     [self.play(anim, run_time=0.5) for anim in change_line_color_animations]
-                #
-                # else:
-                self.play(*connect_lines_animations, run_time=1.0)
-                self.wait(0.5)
-                self.play(*fade_out_lines_animations, run_time=1.0)
+                # Show lines connecting the sample to the centroids
+                connect_lines_animations += [Create(line) for line in lines]
+                # self.play(*[Create(line) for line in lines], run_time=0.5)
                 # self.wait(0.5)
-                self.play(*change_line_color_animations, run_time=1.5)
 
-                # raise NotImplementedError
+                # Change the color of the shortest line and its sample to suit its associated centroid
+                shortest_index = distances.index(min(distances))
+                # self.play(lines[shortest_index].animate.set_color(centroids[shortest_index].get_color()),
+                #           sample.animate.set_color(centroids[shortest_index].get_color()), run_time=0.5)
+                change_line_color_animations += [
+                    lines[shortest_index].animate.set_color(centroids[shortest_index].get_color()),
+                    sample.animate.set_color(centroids[shortest_index].get_color())
+                ]
+                assigned_lines.add(lines[shortest_index])
+                lines.remove(lines[shortest_index])
+
+                # Add dot to the cluster
+                for cluster in clusters:
+                    if cluster[0] is centroids[shortest_index]:
+                        cluster.add(sample)
+
+                # Animate the removal of other lines
+                # self.play(FadeOut(lines))
+                fade_out_lines_animations.append(FadeOut(lines))
+                # self.wait(0.5)
+
+            self.play(*connect_lines_animations, run_time=1.0)
+            self.wait(0.5)
+            self.play(*fade_out_lines_animations, run_time=1.0)
+            # self.wait(0.5)
+            self.play(*change_line_color_animations, run_time=1.5)
+
+            # raise NotImplementedError
 
             # Calculate the variances of the clusters and check if the existing centroid changes position
             cluster_means = [(np.mean([sample.get_x() for sample in cluster[1:]]),
@@ -206,6 +148,53 @@ class KMeans(Scene):
 
 class DynamicClustering(Scene):
     def construct(self):
-        points = []
-        clusters = []
+        points_on_scene = []
+        centroids_on_scene = []
 
+        info = {"Dispersion": 0}
+        info_text = Text(f"Dispersion: {info['Dispersion']}", font_size=30)
+        info_text.to_edge(DOWN)
+        self.play(FadeIn(info_text))
+
+        random.shuffle(sample_points)
+        for i, point in enumerate(centroid_points):
+            dot = Dot(point + (0,), radius=0.2, stroke_color=GREY, stroke_width=0.04, color=colors[i])
+            centroids_on_scene.append(dot)
+        clusters = [[cen] for cen in centroids_on_scene]
+
+        self.play(FadeIn(*centroids_on_scene))
+
+        for point in sample_points:
+            dot = Dot(point + (0,), radius=0.1)
+            points_on_scene.append(dot)
+            self.play(FadeIn(dot))
+            dot_pos = dot.get_center()
+
+            distances = []
+            for centroid in centroids_on_scene:
+                centroid_pos = centroid.get_center()
+                distance = sum([(p1 - p2) ** 2 for p1, p2 in zip(dot_pos, centroid_pos)])
+                distances.append(distance)
+
+            # Assign point to nearest cluster
+            shortest_index = distances.index(min(distances))
+            assigned_centroid = centroids_on_scene[shortest_index]
+
+            for c in clusters:
+                if c[0] is assigned_centroid:
+                    c.append(dot)
+                    cluster_of_choice = c
+                    break
+            else:
+                raise RuntimeError("Oops!")
+
+            self.play(dot.animate.set_color(assigned_centroid.color))
+
+            # Move centroid to mean position of cluster
+            mean_pos = [np.mean(dim) for dim in list(zip(*[tuple(dot.get_center()) for dot in cluster_of_choice[1:]]))]
+
+            self.play(cluster_of_choice[0].animate.move_to(mean_pos))
+
+
+if __name__ == "__main__":
+    subprocess.run("manim -pql animation_main.py KMeans".split())
