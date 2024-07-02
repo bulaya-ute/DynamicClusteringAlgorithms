@@ -76,7 +76,7 @@ print(f"centroid points: {centroid_points}")
 colors = [BLUE, GREEN, RED, PURPLE, ORANGE, YELLOW, GREY]
 
 num_clusters = 5
-cluster_memory = 2
+cluster_memory = 5
 outlier_threshold = 1.2
 
 
@@ -278,7 +278,7 @@ class DynamicClustering(Scene):
 
                 # Update the memory of the cluster as well as empty clusters in a priority manner
                 for i, cluster in enumerate(clusters):
-                    if not cluster[1:] or cluster[0] is not nearest_cluster[0]:
+                    if cluster[1:] and cluster[0] is not nearest_cluster[0]:
                         continue
 
                     # At this point, it has been verified that this cluster is empty, or is the nearest to the new point
@@ -375,7 +375,7 @@ if __name__ == "__main__":
     # subprocess.run("manim -pql animation_main.py DynamicClustering".split())
 
     # To render in low quality
-    # subprocess.run("manimgl animation_main.py DynamicClustering -o -w -l --fps 30".split())
+    # subprocess.run("manimgl animation_main.py DynamicClustering -o -w -l --fps 24".split())
 
     # To simply play animation without rendering
     subprocess.run("manimgl animation_main.py DynamicClustering".split())
