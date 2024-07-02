@@ -35,15 +35,18 @@ Centroids are randomly placed within the specified bounds.
 - Cluster memory is updated based on free space and priority. This allows a cluster to remember a relevant outlier, and possibly add the outlying data point to itself in the future.
 - If there is enough memory available, a data point that was just rejected will always be 'remembered' (added to memory).
 - Memory is 'full' when the number of outliers a cluster has in its memory is equal to the user-specified `cluster_memory`.
-- If memory
+- If memory is full, the current data points stored (together with the one that is about to be added) are sorted in descending order of distance from the centroid. The last one is eliminated.
 
 ### 5. Centroid Update
 
-- When a centroid accepts a data point:
+- When a cluster accepts a data point:
   1. Update its position towards the new data point.
   2. The update distance is calculated as `d * learning_rate`, where:
      - `d` is the distance to the new data point.
      - `learning_rate` is the inverse of the number of data points in the cluster.
+- A centroid then checks if any of the outliers in its memory are close enough to be accepted. 
+- If one is found, the cluster accepts the outlier and this step is repeated.
+- Note that when an outlier is later accepted, it is deleted from the memories of all clusters that have it.
 
 ## Example Usage
 
