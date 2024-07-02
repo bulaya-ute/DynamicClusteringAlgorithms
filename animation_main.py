@@ -76,8 +76,8 @@ print(f"centroid points: {centroid_points}")
 colors = [BLUE, GREEN, RED, PURPLE, ORANGE, YELLOW, GREY]
 
 num_clusters = 5
-cluster_memory = 5
-outlier_threshold = 1.2
+cluster_memory = 3
+outlier_threshold = 1.0
 
 
 class KMeans(Scene):
@@ -374,8 +374,8 @@ class DynamicClustering(Scene):
 if __name__ == "__main__":
     # subprocess.run("manim -pql animation_main.py DynamicClustering".split())
 
-    # To render in low quality
-    # subprocess.run("manimgl animation_main.py DynamicClustering -o -w -l --fps 24".split())
+    # To render
+    # subprocess.run("manimgl animation_main.py DynamicClustering -o -w --fps 24 -r 1280x720".split())
 
     # To simply play animation without rendering
     subprocess.run("manimgl animation_main.py DynamicClustering".split())
