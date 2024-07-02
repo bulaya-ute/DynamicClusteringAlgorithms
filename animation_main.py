@@ -1,10 +1,11 @@
 import itertools
 import subprocess
 from manimlib import *
-import random
 import math
 import numpy as np
 import json
+
+from utils import travel_towards
 
 # sample_points = [(2.4658305992895144, 1.6172972798007168), (2.7596883152421237, 1.3832868707980224),
 #                  (2.3523028009278337, 1.0820019383433914), (2.7021758597018573, 1.1850205974819472),
@@ -198,29 +199,6 @@ class KMeans(Scene):
         # self.play(FadeOut(rectangle), FadeOut(samples), FadeOut(centroids), FadeOut(assigned_lines))
 
 
-def travel_towards(point1, point2, ratio):
-    """
-    Compute the coordinates of the destination point after traveling a specified
-    ratio of the distance from point1 to point2.
-
-    Parameters:
-    - point1: List or tuple representing the coordinates of the first point.
-    - point2: List or tuple representing the coordinates of the second point.
-    - ratio: Fraction of the distance to travel from point1 to point2 (0 <= ratio <= 1).
-
-    Returns:
-    - List representing the coordinates of the destination point.
-    """
-    # Check if point1 and point2 have the same dimensions
-    if len(point1) != len(point2):
-        raise ValueError("Both points must have the same number of dimensions.")
-
-    # Compute the coordinates of the destination point
-    destination = [(1 - ratio) * p1 + ratio * p2 for p1, p2 in zip(point1, point2)]
-
-    return destination
-
-
 class DynamicClustering(Scene):
     def construct(self):
         points_on_scene = []
@@ -374,8 +352,8 @@ class DynamicClustering(Scene):
 if __name__ == "__main__":
     # subprocess.run("manim -pql animation_main.py DynamicClustering".split())
 
-    # To render
-    # subprocess.run("manimgl animation_main.py DynamicClustering -o -w --fps 24 -r 1280x720".split())
+    # To render in medium quality
+    # subprocess.run("manimgl animation_main.py DynamicClustering -o -w -m".split())
 
     # To simply play animation without rendering
     subprocess.run("manimgl animation_main.py DynamicClustering".split())
