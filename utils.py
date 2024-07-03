@@ -25,6 +25,6 @@ def travel_towards(point1, point2, ratio):
 
 
 def load_dataset(path: str):
-    with open("datasets/dataset1.json", "r") as file_obj:
+    with open(path, "r") as file_obj:
         data = json.load(file_obj)
-
+        return data
