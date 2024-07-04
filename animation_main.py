@@ -1,4 +1,5 @@
 import itertools
+import random
 import subprocess
 from manimlib import *
 import math
@@ -19,9 +20,9 @@ print(f"centroid points: {centroid_points}")
 
 colors = [BLUE, GREEN, RED, PURPLE, ORANGE, YELLOW, GREY]
 
-num_clusters = 5
-cluster_memory = 3
-outlier_threshold = 1.0
+num_clusters = 4
+cluster_memory = 10
+outlier_threshold = 1.5
 
 
 class KMeans(Scene):
@@ -144,6 +145,12 @@ class KMeans(Scene):
 
 class DynamicClustering(Scene):
     def construct(self):
+        # TODO: Remove this line later. It's solely for testing
+        centroid_points = [[random.uniform(*bounds["x"]), random.uniform(*bounds["y"])] for _ in range(num_clusters)]
+        # TODO: Remove this line later. It's solely for testing
+        sample_points = [[random.uniform(*bounds["x"]), random.uniform(*bounds["y"])] for _ in range(50)]
+
+
         points_on_scene = []
         centroids_on_scene = []
         acceptance_regions = []
@@ -157,6 +164,7 @@ class DynamicClustering(Scene):
         rect.move_to(new_center)
         self.camera.frame.move_to(new_center)
         self.play(FadeIn(rect))
+
 
         for i, point in enumerate(centroid_points):
             centroid = Text("X", color=colors[i])
@@ -175,6 +183,7 @@ class DynamicClustering(Scene):
         # self.play(FadeIn(*centroids_on_scene))
         self.add(*centroids_on_scene)
         self.add(*acceptance_regions)
+
 
         for point in sample_points:
             dot = Dot(point + [0, ], radius=0.1)
@@ -197,35 +206,34 @@ class DynamicClustering(Scene):
                 self.play(dot.animate.set_color(GREY_BROWN))
                 animations = []
 
-                # Update the memory of the cluster as well as empty clusters in a priority manner
+                # Update the memory of all the clusters
                 for i, cluster in enumerate(clusters):
-                    if cluster[1:] and cluster[0] is not nearest_cluster[0]:
-                        continue
+                    # if cluster[1:] and cluster[0] is not nearest_cluster[0]:
+                    #     continue
 
                     # At this point, it has been verified that this cluster is empty, or is the nearest to the new point
+                    key = lambda dp: sum([(p1 - p2) ** 2 for p1, p2 in zip(dp.get_center(),
+                                                                           nearest_cluster[
+                                                                               0].get_center())]) ** 0.5
 
                     # First check that the data point doesn't already exist in the memory of this cluster
                     if dot not in cluster_memories[i]:
-                        # Check if there's space to add more
-                        if len(cluster_memories[i]) < cluster_memory:
-                            cluster_memories[i].append(dot)
+                        new_memory = cluster_memories[i] + [dot]
+                    else:
+                        new_memory = cluster_memories[i]
 
-                        # If the memory of that cluster is full, sort the rejected data points
-                        # in order of priority including this one, and eliminate the lowest priority ones
-                        elif len(cluster_memories[i]) >= cluster_memory:
-                            new_memory = cluster_memories[i] + [dot]
-                            key = lambda dp: sum([(p1 - p2) ** 2 for p1, p2 in zip(dp.get_center(),
-                                                                                   nearest_cluster[
-                                                                                       0].get_center())]) ** 0.5
-                            new_memory.sort(key=key, reverse=True)
 
-                            cluster_memories[i].clear()
-                            cluster_memories[i] += new_memory[:cluster_memory]
+                    # If the memory of that cluster is full, sort the rejected data points
+                    # in order of priority including this one, and eliminate the lowest priority ones
+                    new_memory.sort(key=key)
 
-                        if dot in cluster_memories[i]:
-                            line = Line(start=dot.get_center(),
-                                        end=centroids_on_scene[i].get_center())
-                            animations.append(ShowCreationThenDestruction(line))
+                    cluster_memories[i].clear()
+                    cluster_memories[i] += new_memory[:cluster_memory]
+
+                    line = Line(start=dot.get_center(),
+                                end=centroids_on_scene[i].get_center())
+                    animations.append(ShowCreationThenDestruction(line))
+
 
                 if animations:
                     self.play(*animations)

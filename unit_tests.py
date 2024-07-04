@@ -17,13 +17,13 @@ class TestDatatypes(unittest.TestCase):
 
     def test_cluster_plus_point(self):
         p1 = Point((0, 0))
-        cluster1 = Cluster()
+        cluster1 = Cluster((0, 0), 1)
         self.assertTrue(isinstance((cluster1 + p1), Cluster),
                         msg="'Cluster' + 'Point' should return a 'Cluster'")
 
 
 class TestPointOperations(unittest.TestCase):
-    def test_distance_calculation(self):
+    def test_distance_calculation_point_to_point(self):
         # coordinate1, coordinate2, expected_distance
         test_values = [((0, 0), (0, 0), 0),
                        ((0, 0), (1, 1), 1.4142135623730951),
@@ -39,6 +39,8 @@ class TestPointOperations(unittest.TestCase):
                 p1 = Point(coord1)
                 p2 = Point(coord2)
                 self.assertEqual(expected_distance, p1.distance_with(p2))
+                self.assertEqual(expected_distance, p2.distance_with(p1))
+                self.assertEqual(p1.distance_with(p2), p2.distance_with(p1))
 
 
 if __name__ == '__main__':
