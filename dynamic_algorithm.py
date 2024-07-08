@@ -1,3 +1,4 @@
+import json
 from time import sleep
 from typing import Union, Optional, Sequence, Iterable
 from utils import load_dataset, travel_towards
@@ -58,35 +59,35 @@ class Cluster:
         self.memory_limit = memory_limit
         self.position = centroid_pos
         if points is not None:
-            self.points: Sequence[DataPoint] = [p for p in points]
+            self.data_points: Sequence[DataPoint] = [p for p in points]
         else:
-            self.points: Sequence[DataPoint] = []
+            self.data_points: Sequence[DataPoint] = []
         self.memory: list[DataPoint] = []
         self.other_attributes = {}
 
     def __add__(self, other: Union["Cluster", DataPoint]) -> "Cluster":
         if isinstance(other, Cluster):
-            self.points += other.points
+            self.data_points += other.data_points
             return self
         elif isinstance(other, DataPoint):
-            for p in self.points:
+            for p in self.data_points:
                 if p is other:
                     break
             else:
-                self.points.append(other)
+                self.data_points.append(other)
             return self
         else:
             raise TypeError(f"Invalid operand supplied. Expected 'Point' or 'Cluster', got {type(other)}.")
 
     def is_close_to(self, other: Union["Cluster", DataPoint], threshold: float) -> bool:
         if isinstance(other, Cluster):
-            for p1 in self.points:
-                for p2 in other.points:
+            for p1 in self.data_points:
+                for p2 in other.data_points:
                     if p1.is_close_to(p2, threshold):
                         return True
             return False
         elif isinstance(other, DataPoint):
-            for p in self.points:
+            for p in self.data_points:
                 if p.is_close_to(other, threshold):
                     return True
             return False
@@ -102,7 +103,7 @@ class Cluster:
         self.memory = new_memory[:self.memory_limit]
 
     def is_empty(self) -> bool:
-        return not bool(self.points)
+        return not bool(self.data_points)
 
     def set_position(self, new_pos: Sequence[float]):
         """Set the coordinates of the cluster's centroid"""
@@ -110,8 +111,8 @@ class Cluster:
 
     @property
     def learning_rate(self):
-        if self.points:
-            return 1 / len(self.points)
+        if self.data_points:
+            return 1 / len(self.data_points)
         return 1
 
 
@@ -230,11 +231,11 @@ class Space:
             color_index = abs_color_index % len(self.colors)
             if isinstance(thing, Cluster):
                 plt.scatter(*thing.position, color=self.colors[color_index], marker="x", s=100)
-                if thing.points and thing.acceptance_radius != float("inf"):
+                if thing.data_points and thing.acceptance_radius != float("inf"):
                     circle = plt.Circle((thing.position[0], thing.position[1]), radius=thing.acceptance_radius,
                                         color=self.colors[color_index], fill=False)
                     plt.gca().add_patch(circle)
-                for x, y in [sample.position for sample in thing.points]:
+                for x, y in [sample.position for sample in thing.data_points]:
                     plt.scatter(x, y, color=self.colors[color_index])
                 abs_color_index += 1
             elif isinstance(thing, DataPoint):
@@ -268,27 +269,18 @@ class Space:
         data = []
         for thing in self.contents:
             if isinstance(thing, Cluster):
-                for data_point in thing:
+                data.append([p.position for p in thing.data_points])
+            elif isinstance(thing, DataPoint):
+                data.append(thing.position)
+            else:
+                raise TypeError
+
+        with open(output_path, "w") as file_obj:
+            json.dump(data, file_obj)
 
 
 if __name__ == "__main__":
     # dataset = load_dataset("datasets/dataset20240708-042931.json")
     sample_space = Space("datasets/dataset20240708-042931.json")
     sample_space.visualise()
-
-    # # Generate random centroid coordinates
-    # centroid_points = [[np.random.uniform(*dataset["bounds"][i]) for i in range(len(dataset["bounds"]))]
-    #                    for _ in range(len(dataset["centroid_points"]))]
-    #
-    # # # Use the actual coordinates of centroids
-    # # centroid_points = dataset["centroid_points"]
-    #
-    # for i, centroid_point in enumerate(centroid_points):
-    #     cluster = sample_space.add_cluster(centroid_point, 1, 3)
-    #     cluster.other_attributes["name"] = i
-    #
-    # for sample_point in dataset["sample_points"]:
-    #     sample_space.add_data_point(DataPoint(sample_point))
-    #
-    # sample_space.visualise()
-    # sleep(2)
+    sample_space.export("outputs/cluster20240708-042931.json")
