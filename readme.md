@@ -57,7 +57,7 @@ Centroids are randomly placed within the specified bounds.
 
 ## Advantages
 - It is capable of detecting outliers.
-- Performance theoretically is not affected by the number of data points, since only the centroids (each with its own memory) are stored in RAM.
+- Performance theoretically is not affected by the number of data points, since calculations are not performed with the entire dataset or an entire cluster.
 - Clusters are usually well-defined since the user specifies the `acceptance_radius`.
 
 ## Disadvantages

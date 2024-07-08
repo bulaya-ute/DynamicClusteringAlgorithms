@@ -60,7 +60,7 @@ def generate_clusters(_num_clusters, _avg_points_per_cluster, _width, _height, _
             px = np.random.uniform(x_min, x_max)
             py = np.random.uniform(y_min, y_max)
             # Check distance with centroids and other outliers
-            if all(np.sqrt((px - ox) ** 2 + (py - oy) ** 2) >= (_min_distance*3) for ox, oy in centroids + outliers):
+            if all(np.sqrt((px - ox) ** 2 + (py - oy) ** 2) >= (_min_distance*2) for ox, oy in centroids + outliers):
                 outliers.append((px, py))
                 valid = True
     _points += outliers
@@ -97,9 +97,9 @@ def save_data_to_json(_points, _width, _height, filename, _centroids=None):
 width = 10
 height = 6
 num_clusters = 5
-avg_points_per_cluster = 10
+avg_points_per_cluster = 30
 min_distance = 0.7
-avg_num_outliers = 4
+avg_num_outliers = 10
 
 # Generate points
 points = generate_clusters(num_clusters, avg_points_per_cluster, width, height, min_distance, avg_num_outliers,

@@ -10,12 +10,13 @@ import json
 
 from utils import travel_towards
 
-with open("datasets/dataset20240708-034937.json", "r") as file_obj:
+np.random.seed(8795465)
+
+with open("datasets/dataset20240708-041535.json", "r") as file_obj:
     data = json.load(file_obj)
     sample_points = data["sample_points"]
     centroid_points = data["centroid_points"]
     bounds = data["bounds"]
-np.random.seed(123445848)
 np.random.shuffle(sample_points)
 print(f"sample points: {sample_points}")
 # print(f"centroid points: {centroid_points}")
@@ -158,8 +159,8 @@ class DynamicClustering(Scene):
         acceptance_regions = []
         cluster_memories = [[] for _ in centroid_points]
 
-        rect_width = bounds["x"][1] - bounds["x"][0]
-        rect_height = bounds["y"][1] - bounds["y"][0]
+        rect_width = bounds[0][1] - bounds[0][0]
+        rect_height = bounds[1][1] - bounds[1][0]
         rect = Rectangle(width=rect_width, height=rect_height)
 
         new_center = np.array([np.mean(bounds["x"]), np.mean(bounds["y"]), 0])
