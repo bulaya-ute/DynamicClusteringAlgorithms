@@ -1,6 +1,8 @@
 import itertools
 import random
 import subprocess
+from typing import Any
+
 from manimlib import *
 import math
 import numpy as np
@@ -8,21 +10,23 @@ import json
 
 from utils import travel_towards
 
-
-with open("datasets/dataset1.json", "r") as file_obj:
+with open("datasets/dataset20240708-034937.json", "r") as file_obj:
     data = json.load(file_obj)
     sample_points = data["sample_points"]
     centroid_points = data["centroid_points"]
     bounds = data["bounds"]
-
+np.random.seed(123445848)
+np.random.shuffle(sample_points)
 print(f"sample points: {sample_points}")
-print(f"centroid points: {centroid_points}")
+# print(f"centroid points: {centroid_points}")
 
 colors = [BLUE, GREEN, RED, PURPLE, ORANGE, YELLOW, GREY]
 
 num_clusters = 4
 cluster_memory = 10
-outlier_threshold = 1.5
+outlier_threshold = 1.0
+
+# centroid_points = [[np.random.uniform(*bounds["x"]), np.random.uniform(*bounds["y"])] for _ in range(num_clusters)]
 
 
 class KMeans(Scene):
@@ -145,11 +149,9 @@ class KMeans(Scene):
 
 class DynamicClustering(Scene):
     def construct(self):
-        # TODO: Remove this line later. It's solely for testing
-        centroid_points = [[random.uniform(*bounds["x"]), random.uniform(*bounds["y"])] for _ in range(num_clusters)]
-        # TODO: Remove this line later. It's solely for testing
-        sample_points = [[random.uniform(*bounds["x"]), random.uniform(*bounds["y"])] for _ in range(50)]
-
+        # Remove these two lines later. It's solely for testing
+        # centroid_points = [[random.uniform(*bounds["x"]), random.uniform(*bounds["y"])] for _ in range(num_clusters)]
+        # sample_points = [[random.uniform(*bounds["x"]), random.uniform(*bounds["y"])] for _ in range(50)]
 
         points_on_scene = []
         centroids_on_scene = []
@@ -165,7 +167,6 @@ class DynamicClustering(Scene):
         self.camera.frame.move_to(new_center)
         self.play(FadeIn(rect))
 
-
         for i, point in enumerate(centroid_points):
             centroid = Text("X", color=colors[i])
             centroid.set_fill(opacity=0.5)
@@ -175,7 +176,7 @@ class DynamicClustering(Scene):
             region_radius = outlier_threshold
             circle = Circle(radius=region_radius)
             circle.move_to(centroid.get_center())
-            circle.set_stroke(opacity=0.0)
+            circle.set_stroke(color=colors[i], opacity=0.5)
             acceptance_regions.append(circle)
 
         clusters: list[list[Union[Text, Dot]]] = [[cen] for cen in centroids_on_scene]
@@ -184,8 +185,7 @@ class DynamicClustering(Scene):
         self.add(*centroids_on_scene)
         self.add(*acceptance_regions)
 
-
-        for point in sample_points:
+        for sample_count_index, point in enumerate(sample_points):
             dot = Dot(point + [0, ], radius=0.1)
             points_on_scene.append(dot)
             self.play(FadeIn(dot))
@@ -203,18 +203,18 @@ class DynamicClustering(Scene):
             # Determine if it's an outlier
 
             if shortest_distance > outlier_threshold and nearest_cluster[1:]:
+                # It is an outlier
+
                 self.play(dot.animate.set_color(GREY_BROWN))
+
                 animations = []
+
+                def distance_key(dp):
+                    return sum([(p1 - p2) ** 2 for p1, p2 in zip(dp.get_center(),
+                                                                 nearest_cluster[0].get_center())]) ** 0.5
 
                 # Update the memory of all the clusters
                 for i, cluster in enumerate(clusters):
-                    # if cluster[1:] and cluster[0] is not nearest_cluster[0]:
-                    #     continue
-
-                    # At this point, it has been verified that this cluster is empty, or is the nearest to the new point
-                    key = lambda dp: sum([(p1 - p2) ** 2 for p1, p2 in zip(dp.get_center(),
-                                                                           nearest_cluster[
-                                                                               0].get_center())]) ** 0.5
 
                     # First check that the data point doesn't already exist in the memory of this cluster
                     if dot not in cluster_memories[i]:
@@ -222,10 +222,8 @@ class DynamicClustering(Scene):
                     else:
                         new_memory = cluster_memories[i]
 
-
-                    # If the memory of that cluster is full, sort the rejected data points
-                    # in order of priority including this one, and eliminate the lowest priority ones
-                    new_memory.sort(key=key)
+                    # Update the order of the memory and ensure the correct amount is available
+                    new_memory.sort(key=distance_key)
 
                     cluster_memories[i].clear()
                     cluster_memories[i] += new_memory[:cluster_memory]
@@ -234,70 +232,68 @@ class DynamicClustering(Scene):
                                 end=centroids_on_scene[i].get_center())
                     animations.append(ShowCreationThenDestruction(line))
 
-
                 if animations:
                     self.play(*animations)
-                continue
 
-            # If the code below this point executes, it is not an outlier
+                # # Nudge the nearest centroid towards the outlier.
+                # # It is guaranteed that the number of sample points are >= 1
+                #
+                # learning_rate =  1 / max(len(nearest_cluster[1:]), 1) / max((shortest_distance - outlier_threshold), 1)
+                # dest_pos = travel_towards(nearest_cluster[0].get_center(), dot.get_center(), learning_rate)
+                #
+                # self.play(nearest_cluster[0].animate.move_to(dest_pos),
+                #           acceptance_regions[shortest_index].animate.move_to(dest_pos))
 
-            # Assign point to nearest cluster
-            assigned_centroid = centroids_on_scene[shortest_index]
+            else:
+                # If the code below this point executes, it is not an outlier
 
-            # Add point to cluster
-            cluster_of_choice = clusters[shortest_index]
-            cluster_of_choice.append(dot)
+                # Assign point to nearest cluster
+                assigned_centroid = centroids_on_scene[shortest_index]
 
-            self.play(dot.animate.set_color(assigned_centroid.color))
+                # Add point to cluster
+                cluster_of_choice = clusters[shortest_index]
+                cluster_of_choice.append(dot)
 
-            learning_rate = 1 / max(len(cluster_of_choice[1:]), 1)
-            dest_pos = travel_towards(cluster_of_choice[0].get_center(), cluster_of_choice[-1].get_center(),
-                                      learning_rate)
+                self.play(dot.animate.set_color(assigned_centroid.get_color()))
 
-            new_circle = Circle(radius=outlier_threshold)
-            new_circle.move_to(dest_pos)
-            new_circle.set_stroke(color=cluster_of_choice[0].color)
+                learning_rate = 1 / max(len(cluster_of_choice[1:]), 1)
+                dest_pos = travel_towards(cluster_of_choice[0].get_center(), cluster_of_choice[-1].get_center(),
+                                          learning_rate)
 
-            self.play(cluster_of_choice[0].animate.move_to(dest_pos),
-                      acceptance_regions[shortest_index].animate.move_to(dest_pos),
-                      Transform(acceptance_regions[shortest_index], new_circle))
+                self.play(cluster_of_choice[0].animate.move_to(dest_pos),
+                          acceptance_regions[shortest_index].animate.move_to(dest_pos))
 
-            # Check if any previously rejected data points are now worth adding to the
-            # cluster, now that the centroid is in an updated position
-            i = 0
-            while i < len(cluster_memories[shortest_index]):
-                data_point = cluster_memories[shortest_index][i]
-                distance = sum([(p1 - p2) ** 2 for p1, p2 in zip(data_point.get_center(),
-                                                                 assigned_centroid.get_center())]) ** 0.5
-                # print(f"DEBUG  dist:{distance} i:{i}")
-                if distance < outlier_threshold:
-                    # print("AHA!")
-                    # self.wait(5)
+                # Check if any previously rejected data points are now worth adding to the
+                # cluster, now that the centroid is in an updated position
+                i = 0
+                while i < len(cluster_memories[shortest_index]):
+                    data_point = cluster_memories[shortest_index][i]
+                    distance = sum([(p1 - p2) ** 2 for p1, p2 in zip(data_point.get_center(),
+                                                                     assigned_centroid.get_center())]) ** 0.5
 
-                    # Assign the data point to the cluster
-                    cluster_of_choice.append(data_point)
-                    self.play(data_point.animate.set_color(assigned_centroid.color))
+                    if distance <= outlier_threshold:
 
-                    # Update the position of the centroid
-                    learning_rate = 1 / max(len(cluster_of_choice[1:]), 1)
-                    dest_pos = travel_towards(cluster_of_choice[0].get_center(), cluster_of_choice[-1].get_center(),
-                                              learning_rate)
-                    new_circle = Circle(radius=outlier_threshold)
-                    new_circle.move_to(dest_pos)
-                    new_circle.set_stroke(color=cluster_of_choice[0].color)
+                        # Assign the data point to the cluster
+                        cluster_of_choice.append(data_point)
+                        self.play(data_point.animate.set_color(assigned_centroid.color))
 
-                    self.play(cluster_of_choice[0].animate.move_to(dest_pos),
-                              acceptance_regions[shortest_index].animate.move_to(dest_pos),
-                              Transform(acceptance_regions[shortest_index], new_circle))
+                        # Update the position of the centroid
+                        learning_rate = 1 / max(len(cluster_of_choice[1:]), 1)
+                        dest_pos = travel_towards(cluster_of_choice[0].get_center(), cluster_of_choice[-1].get_center(),
+                                                  learning_rate)
 
-                    # Remove the data point from the memories of all clusters
-                    for memory in cluster_memories:
-                        if data_point in memory:
-                            memory.pop(memory.index(data_point))
-                            break
+                        self.play(cluster_of_choice[0].animate.move_to(dest_pos),
+                                  acceptance_regions[shortest_index].animate.move_to(dest_pos),
+                                  # Transform(acceptance_regions[shortest_index], new_circle),
+                                  acceptance_regions[shortest_index].animate.move_to(dest_pos))
 
-                    continue
-                i += 1
+                        # Remove the redeemed data point from the memories of all clusters
+                        for memory in cluster_memories:
+                            while data_point in memory:
+                                memory.remove(data_point)
+
+                    else:
+                        i += 1
 
 
 if __name__ == "__main__":

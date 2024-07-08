@@ -1,14 +1,14 @@
 # Dynamic Clustering Algorithm
 
-This repository implements a dynamic clustering algorithm based on the online k-means algorithm. It features real-time data point assignment to clusters and centroid position updates.
+This repository implements a dynamic clustering algorithm based on the online k-means algorithm. It features real-time data point assignment to clusters and centroid position updates. It is also capable of detecting outliers.
 
 ## Algorithm Description
 
 ### 1. Initialization
 
 - **Centroids**: User specifies the number of centroids. There as many centroids as there are clusters.
-- **Bounds**: User provides the bounds for each data input dimension. Upper and lower limits for expected values in the dataset
-- **Outlier Threshold**: User defines a threshold to determine outliers.
+- **Bounds**: User provides the bounds for each data input dimension. Upper and lower limits for expected values in the dataset.
+- **Acceptance radius**: This refers to the radius around each centroid in which incoming data points will be accepted into the cluster.
 - **Cluster Memory**: User defines this value. It determines the maximum number of outliers that a cluster should keep track of.
 
 Centroids are randomly placed within the specified bounds.
@@ -24,9 +24,9 @@ Centroids are randomly placed within the specified bounds.
   2. Focus on the closest centroid.
   3. Determine if the centroid is 'willing' to accept the data point:
      - **Empty Cluster**: Centroid always accepts (always willing).
-     - **Non-Empty Cluster**: Acceptance depends on the distance:
-       - **Distance ≤ Outlier Threshold**: Accept.
-       - **Distance > Outlier Threshold**: Reject (data point is an outlier).
+     - **Non-Empty Cluster**: Willingness depends on the distance:
+       - **Distance ≤ Acceptance radius**: Accept.
+       - **Distance > Acceptance radius**: Reject (data point is an outlier).
   4. If the centroid accepts the new data point, the data point is added to the cluster, and the centroid position updated.
   5. If the centroid rejects the new data point, it is flagged as an outlier. The outlier then updates the memory of the cluster that just rejected it, as well as all the empty clusters.
 
@@ -35,7 +35,7 @@ Centroids are randomly placed within the specified bounds.
 - Cluster memory is updated based on free space and priority. This allows a cluster to remember a relevant outlier, and possibly add the outlying data point to itself in the future.
 - If there is enough memory available, a data point that was just rejected will always be 'remembered' (added to memory).
 - Memory is 'full' when the number of outliers a cluster has in its memory is equal to the user-specified `cluster_memory`.
-- If memory is full, the current data points stored (together with the one that is about to be added) are sorted in descending order of distance from the centroid. The last one is eliminated.
+- If memory is full, the current data points stored (together with the one that is about to be added) are sorted in ascending order of distance from the centroid. The last one is eliminated.
 
 ### 5. Centroid Update
 
@@ -55,3 +55,12 @@ Centroids are randomly placed within the specified bounds.
 
 ```
 
+## Advantages
+- It is capable of detecting outliers.
+- Performance theoretically is not affected by the number of data points, since only the centroids (each with its own memory) are stored in RAM.
+- Clusters are usually well-defined since the user specifies the `acceptance_radius`.
+
+## Disadvantages
+- Order of entry of data points affects the where and if they are added to clusters.
+- If initial data points are outliers, clustering performance is usually very poor because centroids are moved to the first data point they accept.
+- When the `acceptance_radius` is too small, the algorithm is usually very ineffective.
